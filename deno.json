@@ -1,0 +1,21 @@
+{
+  "name": "pipedrive-mcp-server",
+  "version": "1.5.0",
+  "exports": "./src/index.ts",
+  "compilerOptions": {
+    "strict": true,
+    "noImplicitAny": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "exactOptionalPropertyTypes": false,
+    "noFallthroughCasesInSwitch": true
+  },
+  "imports": {
+    "@modelcontextprotocol/sdk": "npm:@modelcontextprotocol/sdk@^1.10.2",
+    "zod": "npm:zod@^3.23.8"
+  },
+  "tasks": {
+    "start": "deno run --allow-net --allow-env src/index.ts",
+    "dev": "deno run --watch --allow-net --allow-env src/index.ts"
+  }
+}
