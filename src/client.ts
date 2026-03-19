@@ -89,12 +89,14 @@ export function createClient(config: PipedriveConfig) {
 
     const url = new URL(`${baseUrl}${path}`);
 
-    // C1-A6: Use Authorization header instead of query param — not logged by proxies
+    // Personal API tokens must be sent as ?api_token= query param.
+    // Authorization: Bearer is only accepted by Pipedrive for OAuth access tokens (v1u:... format).
     const headers: Record<string, string> = {
-      Authorization: `Bearer ${config.apiToken}`,
       "Content-Type": "application/json",
       Accept: "application/json",
     };
+
+    url.searchParams.set("api_token", config.apiToken);
 
     for (const [key, value] of Object.entries(params)) {
       if (value !== undefined && value !== null && value !== "") {
