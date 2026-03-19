@@ -89,14 +89,14 @@ export function createClient(config: PipedriveConfig) {
 
     const url = new URL(`${baseUrl}${path}`);
 
-    // Personal API tokens must be sent as ?api_token= query param.
-    // Authorization: Bearer is only accepted by Pipedrive for OAuth access tokens (v1u:... format).
+    // Personal API tokens must be sent via the x-api-token header.
+    // Authorization: Bearer is only for OAuth access tokens (v1u:... format).
+    // ?api_token= query param works only on v1; v2 ignores it and returns the web app HTML.
     const headers: Record<string, string> = {
+      "x-api-token": config.apiToken,
       "Content-Type": "application/json",
       Accept: "application/json",
     };
-
-    url.searchParams.set("api_token", config.apiToken);
 
     for (const [key, value] of Object.entries(params)) {
       if (value !== undefined && value !== null && value !== "") {
