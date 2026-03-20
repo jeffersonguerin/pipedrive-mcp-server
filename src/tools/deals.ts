@@ -2,16 +2,16 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type {
-  PipedriveClient,
-  ListResponseV2,
   ListResponseV1,
+  ListResponseV2,
+  PipedriveClient,
   SingleResponse,
 } from "../client.ts";
 import {
-  ok,
-  err,
   compactBody,
+  err,
   normalizeFilters,
+  ok,
   serialize,
 } from "../client.ts";
 
@@ -31,6 +31,10 @@ Filters: filter_id, ids, person_id, org_id, pipeline_id, stage_id, owner_id, sta
   - ids: comma-separated list of up to 100 deal IDs
   - status: open | won | lost | deleted (comma-separated, e.g. "open,won")
   - updated_since / updated_until: RFC3339 format (e.g. 2025-01-01T10:20:00Z)
+
+When filter_id is provided, other list filters are ignored before the request is sent.
+This mirrors Pipedrive's API behavior and avoids validation conflicts caused by mixing
+saved-filter queries with entity-specific filters.
 
 sort_by (v2 only supports): id | add_time | update_time
 include_fields (comma-separated, not returned by default):
@@ -146,7 +150,101 @@ Pagination: pass additional_data.next_cursor as cursor. Max limit: 500.`,
         );
         const nc = data.additional_data?.next_cursor;
         return ok(
-          `${data.data.length} deal(s).${nc ? ` Next cursor: ${nc}` : " (end)"}\n\n${serialize(data.data)}`,
+          `${data.data.length} deal(s).${
+            nc ? ` Next cursor: ${nc}` : " (end)"
+          }\n\n${serialize(data.data)}`,
+        );
+      } catch (e) {
+        return err(e);
+      }
+    },
+  );
+
+  // ── LIST DEALS BY SAVED FILTER ─────────────────────────────────────────────
+  server.registerTool(
+    "pipedrive_list_deals_by_filter",
+    {
+      title: "List Deals by Saved Filter",
+      description: `List deals using only a saved Pipedrive filter ID (v2).
+
+Use this when you want to execute a saved filter exactly as defined in Pipedrive
+without mixing it with other list filters. This is safer than a generic list call
+when the filter already encapsulates the desired conditions.
+
+Pagination: pass additional_data.next_cursor as cursor. Max limit: 500.`,
+      inputSchema: z
+        .object({
+          filter_id: z
+            .number()
+            .int()
+            .positive()
+            .describe("Saved Pipedrive filter ID"),
+          cursor: z
+            .string()
+            .optional()
+            .describe(
+              "Cursor from previous response additional_data.next_cursor",
+            ),
+          limit: z
+            .number()
+            .int()
+            .min(1)
+            .max(500)
+            .default(50)
+            .describe("Results per page (default 50, max 500)"),
+          sort_by: z
+            .enum(["id", "add_time", "update_time"])
+            .default("add_time")
+            .describe(
+              "Sort field (v2 supports: id, add_time, update_time only)",
+            ),
+          sort_direction: z.enum(["asc", "desc"]).default("desc"),
+          include_fields: z
+            .string()
+            .optional()
+            .describe("Comma-separated optional fields (see list deals tool)"),
+          custom_fields: z
+            .string()
+            .optional()
+            .describe("Comma-separated custom field keys to include (max 15)"),
+        })
+        .strict(),
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: true,
+      },
+    },
+    async ({
+      filter_id,
+      cursor,
+      limit,
+      sort_by,
+      sort_direction,
+      include_fields,
+      custom_fields,
+    }) => {
+      try {
+        const data = await client.get<ListResponseV2<unknown>>(
+          "/api/v2/deals",
+          compactBody(
+            normalizeFilters({
+              filter_id,
+              cursor,
+              limit,
+              sort_by,
+              sort_direction,
+              include_fields,
+              custom_fields,
+            }),
+          ),
+        );
+        const nc = data.additional_data?.next_cursor;
+        return ok(
+          `${data.data.length} deal(s).${
+            nc ? ` Next cursor: ${nc}` : " (end)"
+          }\n\n${serialize(data.data)}`,
         );
       } catch (e) {
         return err(e);
@@ -367,7 +465,8 @@ Archived deals CANNOT be edited — only is_archived=false is allowed (unarchive
     "pipedrive_delete_deal",
     {
       title: "Delete Deal",
-      description: `Soft-delete a deal (v2). Sets is_deleted=true; permanently removed after 30 days.`,
+      description:
+        `Soft-delete a deal (v2). Sets is_deleted=true; permanently removed after 30 days.`,
       inputSchema: z
         .object({
           id: z.number().int().positive().describe("Deal ID to delete"),
@@ -397,7 +496,8 @@ Archived deals CANNOT be edited — only is_archived=false is allowed (unarchive
     "pipedrive_search_deals",
     {
       title: "Search Deals",
-      description: `Search deals by title, notes, or custom fields (v2). Min 2 chars (or 1 with exact_match=true).
+      description:
+        `Search deals by title, notes, or custom fields (v2). Min 2 chars (or 1 with exact_match=true).
 
 Searchable fields: title, notes, custom_fields (comma-separated, default: all).
 Custom field types searchable: address, varchar, text, varchar_auto, double, monetary, phone.`,
@@ -446,7 +546,9 @@ Custom field types searchable: address, varchar, text, varchar_auto, double, mon
         );
         const nc = data.additional_data?.next_cursor;
         return ok(
-          `${data.data.length} deal(s) for "${params.term}".${nc ? ` Next cursor: ${nc}` : ""}\n\n${serialize(data.data)}`,
+          `${data.data.length} deal(s) for "${params.term}".${
+            nc ? ` Next cursor: ${nc}` : ""
+          }\n\n${serialize(data.data)}`,
         );
       } catch (e) {
         return err(e);
@@ -489,7 +591,9 @@ sort_by: id | add_time | update_time | order_nr`,
           compactBody({ cursor, limit, sort_by, sort_direction }),
         );
         return ok(
-          `${data.data.length} product(s) on deal ${deal_id}.\n\n${serialize(data.data)}`,
+          `${data.data.length} product(s) on deal ${deal_id}.\n\n${
+            serialize(data.data)
+          }`,
         );
       } catch (e) {
         return err(e);
@@ -502,7 +606,8 @@ sort_by: id | add_time | update_time | order_nr`,
     "pipedrive_get_deals_products",
     {
       title: "Get Products for Multiple Deals",
-      description: `Get products attached to multiple deals in one request (v2 bulk endpoint).
+      description:
+        `Get products attached to multiple deals in one request (v2 bulk endpoint).
 
 Provide up to 100 deal IDs as a comma-separated string or array.
 More efficient than calling pipedrive_list_deal_products for each deal individually.
@@ -535,7 +640,9 @@ sort_by: id | deal_id | add_time | update_time | order_nr`,
         );
         const nc = data.additional_data?.next_cursor;
         return ok(
-          `${data.data.length} product line item(s).${nc ? ` Next cursor: ${nc}` : ""}\n\n${serialize(data.data)}`,
+          `${data.data.length} product line item(s).${
+            nc ? ` Next cursor: ${nc}` : ""
+          }\n\n${serialize(data.data)}`,
         );
       } catch (e) {
         return err(e);
@@ -548,7 +655,8 @@ sort_by: id | deal_id | add_time | update_time | order_nr`,
     "pipedrive_add_product_to_deal",
     {
       title: "Add Product to Deal",
-      description: `Attach a product to a deal with pricing (v2). Required: deal_id, product_id, item_price, quantity.
+      description:
+        `Attach a product to a deal with pricing (v2). Required: deal_id, product_id, item_price, quantity.
 
 tax_method: inclusive (tax included in price) | exclusive (tax added on top) | none.
 discount_type: percentage | amount.
@@ -615,7 +723,8 @@ is_enabled: if false, this line item is excluded from deal value calculation.`,
     "pipedrive_update_deal_product",
     {
       title: "Update Deal Product",
-      description: `Update a product line item attached to a deal via PATCH (v2).
+      description:
+        `Update a product line item attached to a deal via PATCH (v2).
 
 Only include fields to change. product_variation_id can be changed.
 NOTE: This updates the deal-product attachment (price, qty, etc.), NOT the product catalog entry itself.`,
@@ -669,7 +778,9 @@ NOTE: This updates the deal-product attachment (price, qty, etc.), NOT the produ
           compactBody(body as Record<string, unknown>),
         );
         return ok(
-          `Deal product ${product_attachment_id} updated.\n\n${serialize(data.data)}`,
+          `Deal product ${product_attachment_id} updated.\n\n${
+            serialize(data.data)
+          }`,
         );
       } catch (e) {
         return err(e);
@@ -752,7 +863,11 @@ Returns person objects with their contact info.`,
         );
         const pg = data.additional_data?.pagination;
         return ok(
-          `${data.data?.length ?? 0} participant(s).${pg?.more_items_in_collection ? ` More (next_start: ${pg.next_start})` : ""}\n\n${serialize(data.data)}`,
+          `${data.data?.length ?? 0} participant(s).${
+            pg?.more_items_in_collection
+              ? ` More (next_start: ${pg.next_start})`
+              : ""
+          }\n\n${serialize(data.data)}`,
         );
       } catch (e) {
         return err(e);
@@ -792,7 +907,9 @@ Useful for tracking multiple contacts involved in a deal.`,
           { person_id },
         );
         return ok(
-          `Person ${person_id} added as participant to deal ${deal_id}.\n\n${serialize(data.data)}`,
+          `Person ${person_id} added as participant to deal ${deal_id}.\n\n${
+            serialize(data.data)
+          }`,
         );
       } catch (e) {
         return err(e);
@@ -872,7 +989,9 @@ Returns: user_id, add_time (RFC3339).`,
         );
         const nc = data.additional_data?.next_cursor;
         return ok(
-          `${data.data.length} follower(s).${nc ? ` Next cursor: ${nc}` : ""}\n\n${serialize(data.data)}`,
+          `${data.data.length} follower(s).${
+            nc ? ` Next cursor: ${nc}` : ""
+          }\n\n${serialize(data.data)}`,
         );
       } catch (e) {
         return err(e);
@@ -912,7 +1031,9 @@ Returns 400 if the user is already following.`,
           { user_id },
         );
         return ok(
-          `User ${user_id} added as follower to deal ${deal_id}.\n\n${serialize(data.data)}`,
+          `User ${user_id} added as follower to deal ${deal_id}.\n\n${
+            serialize(data.data)
+          }`,
         );
       } catch (e) {
         return err(e);
@@ -960,7 +1081,8 @@ Use pipedrive_list_deal_followers to get user_ids.`,
     "pipedrive_convert_deal_to_lead",
     {
       title: "Convert Deal to Lead",
-      description: `Convert a deal into a lead (v2 API). Returns a conversion job ID.
+      description:
+        `Convert a deal into a lead (v2 API). Returns a conversion job ID.
 
 Check status with pipedrive_get_deal_conversion_status.
 On success: related entities (notes, files, activities) are transferred to the new lead.
@@ -1035,7 +1157,8 @@ When completed, response includes the created lead ID (UUID).`,
     "pipedrive_list_archived_deals",
     {
       title: "List Archived Deals",
-      description: `List archived deals (v2 API — separate endpoint, effective Jul 15, 2025).
+      description:
+        `List archived deals (v2 API — separate endpoint, effective Jul 15, 2025).
 
 Archived deals are NOT returned by pipedrive_list_deals.
 They can only be unarchived via pipedrive_update_deal with is_archived=false.
@@ -1100,7 +1223,9 @@ Also supports same include_fields and custom_fields params.`,
         );
         const nc = data.additional_data?.next_cursor;
         return ok(
-          `${data.data.length} archived deal(s).${nc ? ` Next cursor: ${nc}` : " (end)"}\n\n${serialize(data.data)}`,
+          `${data.data.length} archived deal(s).${
+            nc ? ` Next cursor: ${nc}` : " (end)"
+          }\n\n${serialize(data.data)}`,
         );
       } catch (e) {
         return err(e);
@@ -1146,7 +1271,9 @@ All participants, followers, activities, notes, files are transferred to merge_w
           { merge_with_id },
         );
         return ok(
-          `Deal ${id} merged into deal ${merge_with_id}.\n\n${serialize(data.data)}`,
+          `Deal ${id} merged into deal ${merge_with_id}.\n\n${
+            serialize(data.data)
+          }`,
         );
       } catch (e) {
         return err(e);

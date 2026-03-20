@@ -120,11 +120,14 @@ export function createClient(config: PipedriveConfig) {
         throw new PipedriveError(
           408,
           "TIMEOUT",
-          `Request timed out after ${REQUEST_TIMEOUT_MS / 1000}s. Try reducing the limit param or adding more filters.`,
+          `Request timed out after ${
+            REQUEST_TIMEOUT_MS / 1000
+          }s. Try reducing the limit param or adding more filters.`,
         );
       }
-      const safeMsg =
-        fetchErr instanceof Error ? fetchErr.message : "connection failed";
+      const safeMsg = fetchErr instanceof Error
+        ? fetchErr.message
+        : "connection failed";
       throw new PipedriveError(0, "NETWORK_ERROR", `Network error: ${safeMsg}`);
     } finally {
       clearTimeout(timeoutId);
@@ -140,8 +143,8 @@ export function createClient(config: PipedriveConfig) {
 
     if (response.status === 403) {
       const body403 = await response.text().catch(() => "");
-      const isCloudflare =
-        body403.includes("Cloudflare") || body403.includes("error 1020");
+      const isCloudflare = body403.includes("Cloudflare") ||
+        body403.includes("error 1020");
       if (isCloudflare) {
         throw new PipedriveError(
           403,
@@ -179,7 +182,9 @@ export function createClient(config: PipedriveConfig) {
       throw new PipedriveError(
         422,
         "VALIDATION_ERROR",
-        `Validation failed: ${detail || "check required fields and data types"}`,
+        `Validation failed: ${
+          detail || "check required fields and data types"
+        }`,
       );
     }
 
@@ -187,8 +192,8 @@ export function createClient(config: PipedriveConfig) {
       const retryAfter = response.headers.get("Retry-After") || "2";
       const remaining = response.headers.get("X-RateLimit-Remaining") ?? "?";
       const resetAt = response.headers.get("X-RateLimit-Reset") ?? "?";
-      const dailyLeft =
-        response.headers.get("X-Daily-RateLimit-Remaining") ?? "?";
+      const dailyLeft = response.headers.get("X-Daily-RateLimit-Remaining") ??
+        "?";
       throw new PipedriveError(
         429,
         "RATE_LIMITED",
@@ -263,11 +268,10 @@ export interface ToolResult {
 }
 
 export function ok(text: string): ToolResult {
-  const truncated =
-    text.length > CHARACTER_LIMIT
-      ? text.slice(0, CHARACTER_LIMIT) +
-        `\n\n[Response truncated at ${CHARACTER_LIMIT} chars. Use pagination or filters to narrow results.]`
-      : text;
+  const truncated = text.length > CHARACTER_LIMIT
+    ? text.slice(0, CHARACTER_LIMIT) +
+      `\n\n[Response truncated at ${CHARACTER_LIMIT} chars. Use pagination or filters to narrow results.]`
+    : text;
   return { content: [{ type: "text", text: truncated }] };
 }
 
@@ -310,8 +314,23 @@ export function normalizeFilters(
   params: Record<string, unknown>,
 ): Record<string, unknown> {
   const out = { ...params };
+
+  if (out.filter_id !== undefined && out.filter_id !== null) {
+    delete out.ids;
+    delete out.person_id;
+    delete out.org_id;
+    delete out.pipeline_id;
+    delete out.stage_id;
+    delete out.owner_id;
+    delete out.user_id;
+    delete out.status;
+    delete out.updated_since;
+    delete out.updated_until;
+  }
+
   if (out.owner_id === 0) delete out.owner_id;
   if (out.user_id === 0) delete out.user_id;
+
   return out;
 }
 
