@@ -2,7 +2,7 @@
 // Generic CRUD for custom fields across 4 entity types + options management.
 // DealFields, PersonFields, OrganizationFields, ProductFields — identical API shape.
 // ActivityFields — read-only (GET list already in utilities.ts, GET one added here).
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { PipedriveClient, SingleResponse } from "../client.ts";
 import { ok, err, compactBody, serialize } from "../client.ts";

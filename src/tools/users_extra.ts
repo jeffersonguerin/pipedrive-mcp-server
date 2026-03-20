@@ -1,6 +1,6 @@
 // src/tools/users_extra.ts — Pipedrive Users extended endpoints (v1.4.0)
 // GET user by ID, user permissions, user followers.
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { PipedriveClient, SingleResponse, ListResponseV2 } from "../client.ts";
 import { ok, err, compactBody, serialize } from "../client.ts";

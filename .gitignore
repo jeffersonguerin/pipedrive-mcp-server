@@ -16,6 +16,13 @@ Desktop.ini
 .vscode/
 .idea/
 .zed/
+.rules
+.cursorrules
+
+# Local workspace memory database
+.zed/mcp/workspace-orchestrator/memory.db
+.zed/mcp/workspace-orchestrator/memory.db-shm
+.zed/mcp/workspace-orchestrator/memory.db-wal
 *.swp
 *.swo
 *~

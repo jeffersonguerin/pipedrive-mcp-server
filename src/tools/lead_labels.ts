@@ -2,7 +2,7 @@
 // Lead labels use UUID identifiers (unlike deal label_ids which are integers).
 // GET list is already in utilities.ts (pipedrive_list_lead_labels).
 // This file adds GET one, POST, PATCH, DELETE.
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { PipedriveClient, SingleResponse } from "../client.ts";
 import { ok, err, compactBody, serialize } from "../client.ts";

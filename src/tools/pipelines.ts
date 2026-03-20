@@ -1,5 +1,5 @@
 // src/tools/pipelines.ts — Pipedrive Pipelines & Stages API v2
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { PipedriveClient, ListResponseV2, SingleResponse } from "../client.ts";
 import { ok, err, compactBody, serialize } from "../client.ts";

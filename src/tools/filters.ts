@@ -1,7 +1,7 @@
 // src/tools/filters.ts — Pipedrive Filters API v1 (no v2 equivalent yet)
 // Filters are saved views used across list/get endpoints (filter_id parameter).
 // Agents NEED this to discover, create, and manage filters referenced in many tools.
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { PipedriveClient, SingleResponse } from "../client.ts";
 import { ok, err, compactBody, serialize } from "../client.ts";

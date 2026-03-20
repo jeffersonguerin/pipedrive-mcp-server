@@ -294,6 +294,27 @@ export function compactBody(
   return body;
 }
 
+/**
+ * Normalize filter/list params before sending to the Pipedrive API.
+ *
+ * Convention: `owner_id=0` or `user_id=0` means "all owners / all users"
+ * (i.e. do NOT filter by owner). The Pipedrive API does not understand `0`
+ * as a user ID — it must be omitted entirely to return results across all owners.
+ *
+ * This helper strips those keys when their value is `0` so the API receives
+ * no owner/user filter and returns data for the entire company.
+ *
+ * Usage:  `compactBody(normalizeFilters(params))`
+ */
+export function normalizeFilters(
+  params: Record<string, unknown>,
+): Record<string, unknown> {
+  const out = { ...params };
+  if (out.owner_id === 0) delete out.owner_id;
+  if (out.user_id === 0) delete out.user_id;
+  return out;
+}
+
 /** Serialize response data without pretty-printing to reduce payload size */
 export function serialize(data: unknown): string {
   return JSON.stringify(data);

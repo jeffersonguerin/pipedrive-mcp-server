@@ -1,7 +1,7 @@
 // src/tools/remaining.ts — Pipedrive remaining sub-resources (v1.5.0)
 // All endpoints needed to reach 100% in-scope coverage.
 // Organized by entity: Deals, Persons, Products, Leads, Files, Filters, Users.
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type {
   PipedriveClient,

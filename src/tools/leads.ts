@@ -8,10 +8,10 @@
 //   - Only non-archived leads returned by default
 //   - Use GET /v1/leads/archived for archived leads
 //   - Archived leads are NOT editable (only is_archived=false to unarchive)
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { PipedriveClient, ListResponseV1, ListResponseV2, SingleResponse } from "../client.ts";
-import { ok, err, compactBody, serialize } from "../client.ts";
+import { ok, err, compactBody, normalizeFilters, serialize } from "../client.ts";
 
 export function registerLeadTools(server: McpServer, client: PipedriveClient): void {
 
@@ -27,7 +27,7 @@ sort: field_name ASC or field_name ASC, field_name2 DESC.`,
     inputSchema: z.object({
       limit: z.number().int().min(1).max(500).default(50),
       start: z.number().int().min(0).default(0).describe("Pagination offset (v1)"),
-      owner_id: z.number().int().positive().optional(),
+      owner_id: z.number().int().nonnegative().optional().describe("Filter by owner user ID. Use 0 for all users."),
       person_id: z.number().int().positive().optional(),
       org_id: z.number().int().positive().optional(),
       sort: z.string().optional().describe("e.g. 'next_activity_time ASC'"),
@@ -36,7 +36,7 @@ sort: field_name ASC or field_name ASC, field_name2 DESC.`,
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
   }, async (params) => {
     try {
-      const data = await client.get<ListResponseV1<unknown>>("/api/v1/leads", compactBody(params as Record<string, unknown>));
+      const data = await client.get<ListResponseV1<unknown>>("/api/v1/leads", compactBody(normalizeFilters(params as Record<string, unknown>)));
       const pg = data.additional_data?.pagination;
       return ok(`${data.data?.length ?? 0} lead(s).${pg?.more_items_in_collection ? ` More (next_start: ${pg.next_start})` : ""}\n\n${serialize(data.data)}`);
     } catch (e) { return err(e); }
@@ -52,14 +52,14 @@ Use pipedrive_list_leads for active (non-archived) leads.`,
     inputSchema: z.object({
       limit: z.number().int().min(1).max(500).default(50),
       start: z.number().int().min(0).default(0).describe("Pagination offset (v1)"),
-      owner_id: z.number().int().positive().optional(),
+      owner_id: z.number().int().nonnegative().optional().describe("Filter by owner user ID. Use 0 for all users."),
       person_id: z.number().int().positive().optional(),
       org_id: z.number().int().positive().optional(),
     }).strict(),
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
   }, async (params) => {
     try {
-      const data = await client.get<ListResponseV1<unknown>>("/api/v1/leads/archived", compactBody(params as Record<string, unknown>));
+      const data = await client.get<ListResponseV1<unknown>>("/api/v1/leads/archived", compactBody(normalizeFilters(params as Record<string, unknown>)));
       const pg = data.additional_data?.pagination;
       return ok(`${data.data?.length ?? 0} archived lead(s).${pg?.more_items_in_collection ? ` More (next_start: ${pg.next_start})` : ""}\n\n${serialize(data.data)}`);
     } catch (e) { return err(e); }

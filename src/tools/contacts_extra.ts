@@ -1,7 +1,7 @@
 // src/tools/contacts_extra.ts — Pipedrive Persons & Organizations sub-resources (v1.3.0)
 // DRY: Both entities share identical sub-resource shapes (changelog, files, flow, mail, permitted, follower changelog).
 // Persons has one extra: products.
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { PipedriveClient, ListResponseV1 } from "../client.ts";
 import { ok, err, compactBody, serialize } from "../client.ts";

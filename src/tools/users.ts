@@ -1,5 +1,5 @@
 // src/tools/users.ts — Pipedrive Users API v1 + Global Search v2
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { PipedriveClient, SingleResponse } from "../client.ts";
 import { ok, err, compactBody, serialize } from "../client.ts";

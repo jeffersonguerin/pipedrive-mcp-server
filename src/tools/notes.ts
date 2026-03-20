@@ -2,7 +2,7 @@
 // Max note size: ~100,000 characters (100KB)
 // IMPORTANT: All updates use HTTP PUT (not PATCH)
 // Notes support HTML content (sanitized server-side)
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { PipedriveClient, ListResponseV1, SingleResponse } from "../client.ts";
 import { ok, err, compactBody, serialize } from "../client.ts";

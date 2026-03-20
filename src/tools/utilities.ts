@@ -1,6 +1,6 @@
 // src/tools/utilities.ts — Pipedrive utility/reference endpoints (v1)
 // These are essential discovery tools agents need before creating activities or deals
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { PipedriveClient } from "../client.ts";
 import { ok, err, compactBody, serialize } from "../client.ts";

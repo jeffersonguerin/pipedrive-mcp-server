@@ -2,7 +2,7 @@
 // Files can be attached to deals, persons, organizations, leads, notes, etc.
 // NOTE: File upload is NOT supported via this MCP (requires multipart/form-data).
 // This module provides list, get (metadata), and delete operations.
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { PipedriveClient, ListResponseV1, SingleResponse } from "../client.ts";
 import { ok, err, compactBody, serialize } from "../client.ts";
